@@ -54,8 +54,8 @@ Initial extraction of the Tinjis engine.
 
 ### Notes
 
-- Python 3.11 or newer. The CI matrix is configured to test 3.11 through 3.14;
-  no green run is claimed until one is recorded. See `docs/RELEASING.md`.
+- Python 3.11 through 3.14. The complete macOS and Linux CI matrix passed on
+  2026-09-17. See `docs/RELEASING.md`.
 - Licensed under Apache-2.0 (`LICENSE`, `NOTICE`). Adapted-code provenance,
   including that no license of Atlas as a whole is claimed, is recorded in
   `docs/PROVENANCE.md`.

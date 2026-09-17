@@ -486,10 +486,12 @@ class DocumentationTest(unittest.TestCase):
         self.assertIn("no root", text)
         self.assertIn("license file", text)
 
-    def test_readme_does_not_claim_unverified_platform_support(self):
+    def test_readme_scopes_verified_platform_support(self):
         text = (CHECKOUT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("macOS", text)
-        self.assertIn("not verified", text)
+        self.assertIn("**macOS**", text)
+        self.assertIn("**Linux (POSIX)**", text)
+        self.assertIn("CI-verified", text)
+        self.assertIn("**Windows** — deferred", text)
 
     def test_readme_states_the_read_only_scope(self):
         text = (CHECKOUT / "README.md").read_text(encoding="utf-8")
@@ -550,8 +552,7 @@ class DocumentationTest(unittest.TestCase):
             with self.subTest(version=version):
                 self.assertIn(f'"{version}"', text)
         readme = (CHECKOUT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("3.11 or newer", readme)
-        self.assertIn("3.14", readme)
+        self.assertIn("Python 3.11 through 3.14", readme)
 
     def test_no_document_references_an_unpublished_url(self):
         for path in working_tree_files():

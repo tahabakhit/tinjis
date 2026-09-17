@@ -33,7 +33,7 @@ python3 -m unittest discover --start-directory tests --verbose
 ```
 
 Run the full suite before proposing a change. There is no separate integration
-or network test. The claimed interpreter range is Python 3.11 or newer; run the
+or network test. The claimed interpreter range is Python 3.11 through 3.14; run the
 suite on each version you have. Record which versions you actually ran and do
 not claim a version you did not exercise.
 

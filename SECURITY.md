@@ -3,8 +3,8 @@
 ## Reporting
 
 Use the repository's **Security → Report a vulnerability** flow for private
-reports. Before publication, the maintainer must enable GitHub private
-vulnerability reporting. Do not open a public issue for a vulnerability that
+reports. GitHub private vulnerability reporting is enabled. Do not open a
+public issue for a vulnerability that
 could expose data or credentials. Include a minimal reproduction, the commit
 or content hash tested, and the affected command.
 
@@ -133,14 +133,15 @@ errors fail closed; a filesystem that refuses it is unsupported.
   a separate test rejects `getattr` and `setattr` in the package too.
 * Read-only means read-only for the CLI. A different program can still modify
   the same tree, so a `check` result is a snapshot, not a guarantee.
-* The writer foundation is exercised only on macOS in this checkout. It relies
-  on atomic `symlink`/`link`/`rename`; its recovery semantics on a filesystem
+* The writer foundation is exercised by CI on macOS and Linux. It relies on
+  atomic `symlink`/`link`/`rename`; its recovery semantics on a filesystem
   without those are not claimed.
 * `create` closes the check/write window with atomic `os.symlink` `EEXIST`
   under the advisory lock. That protects cooperating same-UID processes only. A
   process that ignores the lock and can rewrite HOME state is outside the
   threat model; there is no portable stdlib compare-and-swap for a pathname.
-* Linux behaviour is not verified; see `docs/STATUS.md`.
+* Windows and non-POSIX filesystem behaviour are not verified; see
+  `docs/STATUS.md`.
 
 ## Reintroducing a writer
 

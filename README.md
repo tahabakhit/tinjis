@@ -34,8 +34,8 @@ Early extraction, read-only. In short:
 
 ## Requirements
 
-* Python 3.11 or newer. The CI matrix is configured to test 3.11, 3.12, 3.13,
-  and 3.14; no green run is claimed until one is recorded.
+* Python 3.11 through 3.14. The full macOS and Linux CI matrix passed for the
+  release-candidate commit on 2026-09-17.
 * A checkout. There is nothing to install: no package manager, no installer,
   no lockfile, no runtime dependency.
 
@@ -157,10 +157,8 @@ accepts. See [`AGENTS.md`](AGENTS.md) before changing any of them.
 
 ## Platform support
 
-* **macOS** — primary; the suite runs here on Python 3.12 and 3.14, and CI is
-  configured to test 3.11 through 3.14.
-* **Linux (POSIX)** — **not verified.** The CI matrix includes Linux, but no
-  green Linux run has been recorded, so no support is claimed.
+* **macOS** — primary; CI-verified on Python 3.11 through 3.14.
+* **Linux (POSIX)** — CI-verified on Python 3.11 through 3.14.
 * **Windows** — deferred. Nothing is claimed.
 
 ## Examples

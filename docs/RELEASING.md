@@ -34,8 +34,8 @@ Every later check runs against this clean clone.
 
 ## 2. Python versions
 
-The claimed range is Python 3.11 or newer; the CI matrix is configured to test
-3.11, 3.12, 3.13, and 3.14. Run the suite on each version available:
+The claimed range is Python 3.11 through 3.14, matching the CI matrix. Run the
+suite on each version available:
 
 ```sh
 for v in 3.11 3.12 3.13 3.14; do

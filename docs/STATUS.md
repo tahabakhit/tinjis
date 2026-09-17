@@ -14,8 +14,9 @@ mutation. See *Writer foundation* and *Preconditions* below.
 ## Operational — read-only
 
 Verified by the test suite in this checkout
-(`python3 -m unittest discover --start-directory tests`), on macOS and on
-Python 3.12 and 3.14; the CI matrix is configured to test 3.11 through 3.14.
+(`python3 -m unittest discover --start-directory tests`). On 2026-09-17 the
+release-candidate commit passed the complete macOS and Linux CI matrix on Python
+3.11 through 3.14, including the read-only CLI smoke check.
 
 | Capability | Notes |
 |---|---|
@@ -141,8 +142,8 @@ durability.
 * Directory `fsync` errors fail the operation closed. A platform or filesystem
   that refuses directory fsync is unsupported by this foundation. Successful
   fsync calls still do not establish full device-level power-loss durability.
-* The writer foundation is POSIX-shaped and is exercised only on macOS in this
-  checkout. Its recovery semantics on a filesystem without atomic
+* The writer foundation is POSIX-shaped and is exercised by CI on macOS and
+  Linux. Its recovery semantics on a filesystem without atomic
   `symlink`/`link`/`rename` are not claimed.
 * The writer foundation creates only. It does not retire, replace, or otherwise
   migrate an existing destination. Normal apply preflights every leaf before
@@ -158,8 +159,8 @@ durability.
 
 | Platform | Status |
 |---|---|
-| macOS | Primary. The suite passes here on Python 3.12 and 3.14; CI is configured to test 3.11 through 3.14. |
-| Linux (POSIX) | **Not verified.** The code is stdlib-only and path handling is POSIX-shaped, and the CI matrix includes Linux, but no green Linux run has been recorded. Do not claim support until one is. |
+| macOS | Primary. CI-verified on Python 3.11 through 3.14 on 2026-09-17. |
+| Linux (POSIX) | CI-verified on Python 3.11 through 3.14 on 2026-09-17. |
 | Windows | Deferred. Nothing is claimed; the writer's `os.link`/`os.rename` semantics differ. |
 
 ## Development tooling
@@ -168,8 +169,8 @@ None is required. The suite runs on a bare Python installation with no
 installation step. `.ruff.toml` documents the lint and format rules used while
 authoring this checkout; `ruff` is a local convenience and is deliberately not
 wired into CI, so a clone can be tested with nothing installed. Secret scanning
-is a publication check, not a runtime dependency. On 2026-09-17,
-`gitleaks dir . --no-banner --redact` exited 0 against the complete uncommitted
-working tree. Re-run it against Git history before publication. Adding a runtime
-dependency, a packaging manifest, a lockfile, or a build step requires an
-explicit decision recorded here first.
+is a publication check, not a runtime dependency. On 2026-09-17, both
+`gitleaks dir . --no-banner --redact` and
+`gitleaks git . --no-banner --redact` exited 0 before publication. Adding a
+runtime dependency, a packaging manifest, a lockfile, or a build step requires
+an explicit decision recorded here first.

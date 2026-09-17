@@ -10,11 +10,9 @@ permissions:
 
 jobs:
   test:
-    # macOS is the primary platform. The Linux rows are how Linux support would
-    # get verified; README.md and docs/STATUS.md keep Linux unclaimed until a
-    # green Linux run is actually recorded. Do not flip that claim from a matrix
-    # definition alone. The Python rows cover the full claimed 3.11-3.14 range;
-    # a configuration entry is not a claim that a green run exists.
+    # macOS is the primary platform. The complete macOS/Linux matrix first
+    # passed on 2026-09-17. The Python rows cover the claimed 3.11-3.14 range;
+    # preserve all rows so later releases carry equivalent evidence.
     strategy:
       fail-fast: false
       matrix:
