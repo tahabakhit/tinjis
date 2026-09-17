@@ -1,0 +1,5 @@
+{
+  "_comment": "Synthetic fixture. A consumer settings template, not a settings file for any installed tool. Tinjis declares it; this phase does not apply it.",
+  "example_setting": "placeholder",
+  "example_list": []
+}

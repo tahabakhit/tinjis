@@ -1,0 +1,22 @@
+# Lint and format configuration.
+#
+# This is editor/CI-tool configuration only. Tinjis has no runtime dependency,
+# no packaging manifest, and no build step; the test suite runs on a bare
+# Python installation. Ruff is a local developer convenience, invoked as:
+#
+#   ruff check .        # lint
+#   ruff format .       # format
+#
+# It is deliberately not wired into CI so that a clone can be tested with
+# nothing installed.
+
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W", "B", "UP", "SIM", "I", "RUF"]
+
+[lint.per-file-ignores]
+# Test modules intentionally import after a sys.path bootstrap and reuse short
+# names for readability.
+"tests/*.py" = ["E402"]

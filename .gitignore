@@ -1,0 +1,36 @@
+# Local generated files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+**/.venv/
+
+# Third-party trees are never vendored
+node_modules/
+**/node_modules/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Local tool caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Runtime state and secrets. Tinjis never commits these, and the engine writes
+# its ownership record into the operator's HOME, not into the checkout.
+.env
+.env.*
+auth.json
+credentials.json
+state.db
+*.log
+
+# Local scratch
+tmp/

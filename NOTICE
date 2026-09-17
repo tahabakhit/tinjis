@@ -1,0 +1,16 @@
+Tinjis
+Copyright 2026 Taha Bakhit
+
+This product adapts original software written by Taha Bakhit as part of the
+Atlas project. His contributions are licensed here under the Apache License,
+Version 2.0 (see LICENSE).
+
+Atlas itself carries no root license file and is not distributed under an
+Apache license. No license of Atlas as a whole is claimed, granted, or implied
+by this NOTICE.
+See docs/PROVENANCE.md for the exact files, revisions, and content hashes that
+were read while writing Tinjis.
+
+No third-party libraries, skills, extensions, tool configurations, or package
+pins are bundled with this distribution. Every file under examples/ is an
+original synthetic fixture written for this repository.

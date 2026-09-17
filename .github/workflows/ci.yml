@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # macOS is the primary platform. The Linux rows are how Linux support would
+    # get verified; README.md and docs/STATUS.md keep Linux unclaimed until a
+    # green Linux run is actually recorded. Do not flip that claim from a matrix
+    # definition alone.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        python-version: ["3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Tinjis is stdlib-only and clone-run: no install step, no dependency to
+      # resolve, no lockfile to honour. It is also read-only, so there is no
+      # apply smoke test to run -- only read-only invocations.
+      - name: Test suite
+        run: python3 -m unittest discover --start-directory tests --verbose
+      - name: Read-only CLI smoke check against a temporary HOME
+        run: |
+          home="$(mktemp -d)/home"
+          mkdir -p "$home"
+          python3 bin/tinjis validate
+          python3 bin/tinjis example >/dev/null
+          # A fresh HOME must not be in sync, and check must not create anything.
+          if python3 bin/tinjis check --home "$home"; then
+            echo "::error::a fresh HOME must not already be in sync"
+            exit 1
+          fi
+          if [ -n "$(find "$home" -mindepth 1)" ]; then
+            echo "::error::check wrote into the runtime root"
+            exit 1
+          fi
+          # There is no apply command; asking for one is a usage error.
+          if python3 bin/tinjis apply --home "$home" 2>/dev/null; then
+            echo "::error::an apply command must not exist"
+            exit 1
+          fi
+
+  invariants:
+    # The compiled lock, the authored example, and the independent test fixture
+    # are three separate descriptions of one topology. Drift between any two of
+    # them must fail loudly instead of silently redefining what Tinjis accepts.
+    # The hygiene job applies recursive bounded AST regression guards, checks
+    # scan coverage, and verifies publication-safe repository shape. It does
+    # not attempt to prove arbitrary Python behavior.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Topology lock and repository hygiene
+        run: |
+          python3 -m unittest discover --start-directory tests --pattern "test_topology.py" --verbose
+          python3 -m unittest discover --start-directory tests --pattern "test_hygiene.py" --verbose

@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "runtime": {
+    "root": ".config/tinjis-example"
+  },
+  "consumers": [
+    {
+      "name": "pi",
+      "root": "pi",
+      "settings": "examples/project/pi/settings.json",
+      "links": [
+        {
+          "destination": "agents/example-agent",
+          "source": "examples/project/pi/agents/example-agent"
+        },
+        {
+          "destination": "extensions/example-tool",
+          "source": "examples/project/pi/extensions/example-tool"
+        }
+      ]
+    },
+    {
+      "name": "hermes",
+      "root": "hermes",
+      "settings": "examples/project/hermes/config.overlay.yaml",
+      "links": [
+        {
+          "destination": "skills/example-notes",
+          "source": "examples/project/hermes/skills/example-notes"
+        }
+      ]
+    },
+    {
+      "name": "herdr",
+      "root": "herdr",
+      "settings": "examples/project/herdr/config.toml",
+      "links": []
+    }
+  ],
+  "selection": {
+    "inventory": "examples/project/inventory.json",
+    "source_root": "examples/project/shared",
+    "destination": ".local/share/tinjis-example/shared"
+  },
+  "files": [
+    {
+      "label": "herdr/status.sh",
+      "source": "examples/project/herdr/status.sh",
+      "destination": ".config/tinjis-example/herdr/status.sh"
+    }
+  ],
+  "legacy_paths": [
+    "legacy-example-link"
+  ],
+  "reviewed_actions": [
+    {
+      "consumer": "pi",
+      "command": "example-package-manager install pi"
+    },
+    {
+      "consumer": null,
+      "command": "herdr integration install pi"
+    }
+  ]
+}

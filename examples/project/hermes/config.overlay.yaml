@@ -1,0 +1,4 @@
+# Synthetic fixture. A consumer settings template, not a configuration overlay
+# for any installed tool. Tinjis declares it; this phase does not apply it.
+example:
+  setting: placeholder
