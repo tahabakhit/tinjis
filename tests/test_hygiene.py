@@ -504,11 +504,11 @@ class DocumentationTest(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(name, text)
 
-    def test_changelog_records_the_release_candidate_and_read_only_scope(self):
+    def test_changelog_records_the_release_and_read_only_scope(self):
         text = (CHECKOUT / "CHANGELOG.md").read_text(encoding="utf-8")
         lowered = text.lower()
-        self.assertIn("0.1.0", text)
-        self.assertIn("release candidate", lowered)
+        self.assertIn("## [0.1.0] - 2026-09-17", text)
+        self.assertIn("initial public release", lowered)
         self.assertIn("read-only", lowered)
         self.assertIn("no `apply` command", lowered)
 

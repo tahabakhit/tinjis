@@ -1,8 +1,6 @@
 # Changelog
 
-Notable changes to Tinjis. There is no published release yet: `0.1.0` below is
-the release candidate prepared from the current `main` HEAD and is **not
-tagged**. A date is added only when a maintainer actually tags a release.
+Notable changes to Tinjis. Release dates use ISO 8601 format.
 
 Every entry describes a **read-only** command-line interface. Tinjis validates
 and reports; it has no `apply` command and no filesystem-mutation, subprocess,
@@ -10,9 +8,9 @@ or network path. A tested, CLI-unreachable, create-only writer foundation exists
 under `tinjis/writer.py`; see `docs/STATUS.md` for exactly what it does and why
 `apply` stays withheld.
 
-## [0.1.0] - Unreleased (release candidate)
+## [0.1.0] - 2026-09-17
 
-Initial extraction of the Tinjis engine.
+Initial public release of the Tinjis engine.
 
 ### Added
 
@@ -49,8 +47,8 @@ Initial extraction of the Tinjis engine.
   application, retirement, or replacement of a recorded target.
 - Package installation, dependency resolution, network access, model
   interaction, or another tool's lifecycle management.
-- Platform support beyond what a recorded acceptance run establishes; Linux
-  remains unclaimed until a green run exists.
+- Windows or non-POSIX platform support; the release matrix covers macOS and
+  Linux only.
 
 ### Notes
 
