@@ -182,9 +182,11 @@ class NoMutationOrNetworkTest(unittest.TestCase):
         }
     )
 
-    BANNED_ATTRS = frozenset(
+    # Process and interpreter control. Banned in every module including the
+    # sanctioned writer: a mutation site still has no business spawning a
+    # process, changing directory, or sending a signal.
+    PROCESS_ATTRS = frozenset(
         {
-            # process and interpreter control
             "system",
             "popen",
             "fork",
@@ -211,7 +213,13 @@ class NoMutationOrNetworkTest(unittest.TestCase):
             "killpg",
             "chdir",
             "chroot",
-            # filesystem writes
+        }
+    )
+
+    # Filesystem writes. Banned everywhere except ``writer.py``, the package's
+    # one sanctioned mutation site. The CLI remains unreachable to it.
+    FS_ATTRS = frozenset(
+        {
             "write_text",
             "write_bytes",
             "mkdir",
@@ -250,6 +258,17 @@ class NoMutationOrNetworkTest(unittest.TestCase):
         }
     )
 
+    BANNED_ATTRS = PROCESS_ATTRS | FS_ATTRS
+
+    #: The only module allowed to call a filesystem mutation. A test proves this
+    #: set is exactly the set of modules that actually contain such a call, so a
+    #: second mutation site cannot appear unnoticed.
+    MUTATION_MODULES = frozenset({"writer.py"})
+
+    #: The filesystem calls ``writer.py`` is expected to use, and nothing more.
+    #: Widening this set is a deliberate, reviewable act.
+    WRITER_FS_ATTRS = frozenset({"open", "fsync", "link", "mkdir", "rename", "symlink", "unlink"})
+
     def package_trees(self):
         for path in sorted(PACKAGE.rglob("*.py")):
             yield path, ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -268,13 +287,32 @@ class NoMutationOrNetworkTest(unittest.TestCase):
                 attrs.add(func.attr)
         return bare, attrs
 
-    def test_no_mutating_or_process_call_exists(self):
+    def test_no_mutating_or_process_call_exists_outside_the_writer(self):
         for path, tree in self.package_trees():
+            if path.name in self.MUTATION_MODULES:
+                continue
             bare, attrs = self.called_names(tree)
             with self.subTest(path=path.name, kind="builtin"):
                 self.assertEqual(sorted(bare & self.BANNED_BARE), [], path.name)
             with self.subTest(path=path.name, kind="attribute"):
                 self.assertEqual(sorted(attrs & self.BANNED_ATTRS), [], path.name)
+
+    def test_writer_is_the_only_module_that_mutates(self):
+        offenders = set()
+        for path, tree in self.package_trees():
+            _bare, attrs = self.called_names(tree)
+            if attrs & self.FS_ATTRS:
+                offenders.add(path.name)
+        self.assertEqual(offenders, set(self.MUTATION_MODULES))
+
+    def test_writer_uses_no_process_call_and_no_unlisted_filesystem_call(self):
+        path = PACKAGE / "writer.py"
+        bare, attrs = self.called_names(
+            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        )
+        self.assertEqual(sorted(bare & self.BANNED_BARE), [], "writer.py")
+        self.assertEqual(sorted(attrs & self.PROCESS_ATTRS), [], "writer.py")
+        self.assertEqual(sorted((attrs & self.FS_ATTRS) - self.WRITER_FS_ATTRS), [], "writer.py")
 
     def test_no_network_or_process_module_is_imported(self):
         for path, tree in self.package_trees():
@@ -409,9 +447,13 @@ class DocumentationTest(unittest.TestCase):
         self.assertIn("Scaffolded", text)
         self.assertIn("Removed", text)
 
-    def test_status_states_that_no_writer_exists(self):
+    def test_status_records_the_writer_foundation_and_withholds_apply(self):
         text = (CHECKOUT / "docs" / "STATUS.md").read_text(encoding="utf-8")
-        self.assertIn("no writer", text.lower())
+        lowered = text.lower()
+        self.assertIn("writer foundation", lowered)
+        self.assertIn("cli-unreachable", lowered)
+        self.assertIn("no `apply` command", lowered)
+        self.assertIn("ownership migration", lowered)
 
     def test_provenance_names_every_source_with_a_hash(self):
         text = (CHECKOUT / "docs" / "PROVENANCE.md").read_text(encoding="utf-8")

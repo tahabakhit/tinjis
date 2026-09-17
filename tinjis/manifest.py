@@ -67,7 +67,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .errors import ContainmentError, InputError, ManifestError
-from .ownership import OWNED_LEAF_NAME, OWNED_STATE_DIRNAME
+from .ownership import (
+    JOURNAL_LEAF_NAME,
+    LOCK_LEAF_NAME,
+    OWNED_LEAF_NAME,
+    OWNED_STATE_DIRNAME,
+    bookkeeping_overlap,
+)
 from .paths import (
     escapes_checkout,
     fold_key,
@@ -110,7 +116,9 @@ ACTION_KEYS = frozenset({"consumer", "command"})
 # declared link must never collide with any of them, compared case-insensitively
 # so `Settings.json` cannot slip past on a case-insensitive filesystem.
 SETTINGS_LEAF_NAME = "settings.json"
-RESERVED_LEAF_NAMES = frozenset({SETTINGS_LEAF_NAME, OWNED_LEAF_NAME, OWNED_STATE_DIRNAME})
+RESERVED_LEAF_NAMES = frozenset(
+    {SETTINGS_LEAF_NAME, OWNED_LEAF_NAME, JOURNAL_LEAF_NAME, LOCK_LEAF_NAME, OWNED_STATE_DIRNAME}
+)
 RESERVED_LEAF_KEYS = frozenset(fold_key(name) for name in RESERVED_LEAF_NAMES)
 
 # The two shapes an authored input may declare.
@@ -419,6 +427,30 @@ def _parse_actions(value: object, *, where: str, consumer_names: set) -> tuple:
     return tuple(actions)
 
 
+def _declared_destinations(manifest: Manifest) -> list:
+    """Every declared destination path, as ``(path, label)``, before folding.
+
+    This is the reservation view. It names the runtime root, each consumer
+    root, each consumer link destination, the selection destination, and each
+    file destination, so the reserved bookkeeping namespace is checked against
+    every projection category instead of only against resolved leaves.
+    """
+    destinations: list = [(manifest.runtime.root, "runtime.root")]
+    for consumer in manifest.consumers:
+        destinations.append((consumer.root, f"consumers[{consumer.name}].root"))
+        for link in consumer.links:
+            destinations.append(
+                (
+                    link.destination,
+                    f"consumers[{consumer.name}].links[{link.destination}].destination",
+                )
+            )
+    destinations.append((manifest.selection.destination, "selection.destination"))
+    for entry in manifest.files:
+        destinations.append((entry.destination, f"files[{entry.label}].destination"))
+    return destinations
+
+
 def _declared_leaves(manifest: Manifest) -> list:
     """Every concrete runtime leaf the manifest declares, as ``(path, label)``."""
     runtime_root = manifest.runtime.root
@@ -452,6 +484,24 @@ def validate_semantic_collisions(manifest: Manifest) -> None:
     collapse.
     """
     leaves = _declared_leaves(manifest)
+    # The whole Tinjis bookkeeping namespace is reserved against every
+    # projection category. This runs before the collision pass so a declaration
+    # that equals, contains, or sits inside `.config/tinjis` is refused for that
+    # reason rather than for an incidental conflict with a sibling. Authored
+    # declarations are checked here; transaction validation checks the same
+    # namespace independently, so neither layer trusts the other.
+    for path, label in _declared_destinations(manifest):
+        if bookkeeping_overlap(tuple(path.split("/"))):
+            raise ManifestError(
+                f"{label} declares {path!r}, inside the reserved Tinjis bookkeeping "
+                "namespace .config/tinjis"
+            )
+    for leaf, label in leaves:
+        if bookkeeping_overlap(tuple(leaf.split("/"))):
+            raise ManifestError(
+                f"{label} declares {leaf!r}, inside the reserved Tinjis bookkeeping "
+                "namespace .config/tinjis"
+            )
     _assert_no_leaf_collisions(leaves, where=MANIFEST_NAME)
     destination_text = manifest.selection.destination
     destination = fold_path(destination_text)

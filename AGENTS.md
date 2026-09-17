@@ -2,18 +2,27 @@
 
 Short placement and update guardrails. Do not restate the architecture.
 
-## Tinjis v0 is read-only
+## The CLI is read-only; the writer is one internal create-only module
 
-There is **no writer**. Do not add, restore, or leave behind a filesystem
-mutation path: no `apply` command, no symlink/directory/file/permission write,
-no subprocess, no network call. This is a deliberate scope decision, not an
-unfinished feature. `docs/STATUS.md` lists the removals and the preconditions a
-future writer must satisfy first. If you believe a writer is needed, stop and
-ask; do not add one.
+No command has a filesystem-mutation path: there is no `apply` command, and
+`tinjis/cli.py` must never import `tinjis/writer.py`. The internal foundation in
+`tinjis/journal.py` and `tinjis/writer.py` is a deliberate, bounded exception:
+it is **create-only** (it refuses `retire`, `update`, and `conflict` before any
+mutation), it journals intent before the first link, and recovery is
+deterministic. Normal apply never adopts a pre-existing leaf; recovery may
+accept an exact-target leaf only under a trusted journal published after an
+absence preflight. It is not an operational writer and makes no
+hostile-same-UID, full power-loss, or general race-proof guarantee. Do not expose
+it through the CLI, add another mutating module, or
+widen its primitives without first satisfying the preconditions recorded in
+`docs/STATUS.md`.
 
-A test asserts the package has no mutating or process-spawning call, no banned
-import, and no `getattr`/`setattr` indirection. Keep it passing rather than
-weakening it.
+The safety scan in `tests/test_hygiene.py` bans filesystem calls in every module
+except `writer.py`, bans process and network imports and `getattr`/`setattr`
+indirection everywhere, and pins the exact filesystem calls `writer.py` may use.
+A separate test fails if any other module starts calling a mutating primitive.
+Keep those tests passing rather than weakening them; widening the writer's call
+set is a reviewable, deliberate act.
 
 ## Placement
 
@@ -36,8 +45,10 @@ parsing and printing. Do not move a boundary check into a caller.
 
 ## Rules to preserve
 
-* **Ownership is recorded, never inferred.** An existing symlink with the right
-  target is still a conflict unless the record names it exactly.
+* **Ownership is recorded, never inferred from a matching target alone.** An
+  existing symlink with the right target is a normal-planning conflict unless
+  the record names it. Create recovery may accept that state only when a trusted
+  locked journal proves intent was published after an absence preflight.
 * **Comparison of declared paths is folded.** Case and Unicode normalisation
   differences are collisions, because a default macOS filesystem collapses them.
   Destinations must be NFC. Reserved leaf names are matched folded.

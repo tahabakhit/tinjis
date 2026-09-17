@@ -2,9 +2,9 @@
 
 Schema-v1 does not implement ownership migration: there is no protocol for
 moving a runtime root, retiring a consumer, relocating a destination, or
-rewriting a previously recorded target in another place. Tinjis therefore has
-no writer, and only the bundled example is eligible for full read-only
-preflight.
+rewriting a previously recorded target in another place. No command therefore
+reaches the writer foundation, and only the bundled example is eligible for
+full read-only preflight.
 
 Parsing is generic and the *checkable* topology is locked:
 

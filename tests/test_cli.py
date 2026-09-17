@@ -155,13 +155,28 @@ class NoMutationRouteTest(unittest.TestCase):
             with self.subTest(module=module.__name__, name=name):
                 self.assertFalse(hasattr(module, name))
 
-    def test_no_module_defines_a_write_shaped_function_name(self):
+    def test_no_module_outside_the_writer_defines_a_write_shaped_function(self):
+        # ``writer.py`` is the one sanctioned mutation site; every other module
+        # must stay free of write-shaped entry points.
         banned = ("write_", "apply_", "atomic_", "install", "mutate", "unlink")
         for path in sorted((CHECKOUT / "tinjis").glob("*.py")):
+            if path.name == "writer.py":
+                continue
             source = path.read_text(encoding="utf-8")
             for name in banned:
                 with self.subTest(path=path.name, name=name):
                     self.assertNotIn(f"def {name}", source)
+
+    def test_writer_defines_the_sanctioned_primitives_and_no_apply_command(self):
+        from tinjis import writer
+
+        for name in ("apply_transaction", "recover", "plan_create_transaction"):
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(writer, name)))
+        self.assertFalse(hasattr(writer, "command_apply"))
+        # Retirement and a general apply_plans entry point are gone.
+        self.assertFalse(hasattr(writer, "retire_link"))
+        self.assertFalse(hasattr(writer, "apply_plans"))
 
 
 class ValidateTest(unittest.TestCase):

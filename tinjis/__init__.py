@@ -2,10 +2,13 @@
 
 The package owns one narrow job: parse an authored, declarative JSON manifest,
 refuse anything malformed or ambiguous, and report the *plan* a future writer
-would have to carry out. It does not carry it out. There is no filesystem
-mutation path in this package at all -- no symlink, directory, file, or
-permission write, and no subprocess or network call. ``docs/STATUS.md`` records
-why, and what a future writer must bring with it first.
+would have to carry out. The CLI does not carry it out: it has no filesystem
+mutation path, no subprocess, and no network call. An internal, tested writer
+foundation (:mod:`tinjis.journal` and :mod:`tinjis.writer`) journals intent,
+recovers deterministically, and provides a create-only atomic primitive a future
+``apply`` command would need; it refuses ``retire``, ``update``, and
+``conflict`` and no command imports it. ``docs/STATUS.md`` records exactly what
+exists and why ``apply`` stays hidden.
 
 Every external tool a manifest can name -- Pi, Hermes, Herdr, or anything else
 -- remains a user-managed prerequisite. Tinjis does not install packages, does

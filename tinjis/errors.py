@@ -35,3 +35,15 @@ class OwnershipError(TinjisError):
 
 class SelectionError(TinjisError):
     """A missing, malformed, duplicated, or unresolved selection inventory."""
+
+
+class JournalError(TinjisError):
+    """A malformed, inconsistent, or unrecoverable intent journal."""
+
+
+class WriterError(TinjisError):
+    """A refused or failed filesystem mutation in the writer foundation."""
+
+
+class RevalidationError(WriterError):
+    """A destination changed between the check and the write."""

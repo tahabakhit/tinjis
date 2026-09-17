@@ -1,8 +1,9 @@
 """Read-only projection planning.
 
-There is no writer in Tinjis v0. This module computes what a future, journaled
-writer *would* have to do, and refuses to guess about anything it cannot prove.
-It opens no file for writing, creates no directory, and follows no symlink.
+Planning is pure and read-only. This module computes what the journaled writer
+in :mod:`tinjis.writer` *would* have to do, and refuses to guess about anything
+it cannot prove. It opens no file for writing, creates no directory, and
+follows no symlink; it never imports the writer.
 
 The plan answers these questions for every declared leaf:
 

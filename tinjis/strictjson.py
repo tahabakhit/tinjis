@@ -53,3 +53,21 @@ def _reject_constant(error: type, where: str):
         raise error(f"{where} contains the non-standard JSON literal {value!r}")
 
     return reject
+
+
+def dumps_stable(value) -> str:
+    """A deterministic, key-sorted JSON encoding with no non-finite floats.
+
+    Used only for Tinjis-owned bookkeeping (the ownership record and the intent
+    journal), never for authored input. Sorting keys makes the bytes stable, so
+    rewriting unchanged content produces an identical file and recovery stays
+    idempotent at the byte level. ``allow_nan=False`` keeps a non-finite float
+    from entering a record this package later reads strictly.
+    """
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    )

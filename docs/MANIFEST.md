@@ -55,7 +55,16 @@ comparison is case-folded, so `Settings.json` is refused for the same reason
 
 * `settings.json` — the consumer settings file;
 * `owned.json` — the Tinjis ownership record leaf name;
-* `.tinjis-state` — the reserved future transaction state directory name.
+* `journal.json` — the Tinjis intent journal leaf name;
+* `lock` — the Tinjis writer advisory-lock leaf name;
+* `.tinjis-state` — the reserved state directory name.
+
+Separately, the whole Tinjis bookkeeping namespace `.config/tinjis` is reserved.
+Every projection category — `runtime.root`, `consumers[].root`,
+`consumers[].links[].destination`, `selection.destination`, and
+`files[].destination` — is refused when it equals, contains, or sits inside that
+namespace, compared folded. The rule is enforced both at parse time and again
+when a transaction is validated, so neither layer has to trust the other.
 
 Within one consumer, `destination` values must be unique and no destination may
 be an ancestor of another. Both rules are folded, and both are re-applied across

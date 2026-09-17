@@ -1,8 +1,12 @@
 # Architecture
 
-Tinjis is a read-only declaration checker. It has authored inputs (a manifest, an
+Tinjis has authored inputs (a manifest, an
 inventory, declared resources), one piece of untrusted runtime state (the
-ownership record), and no writable subsystem at all.
+ownership record), and a read-only CLI. A separate, tested, **CLI-unreachable
+writer foundation** (`journal.py` + `writer.py`) journals intent, recovers
+deterministically, and provides one atomic `create` primitive a future `apply`
+command would need. It is not an operational writer: `retire`, `update`, and
+`conflict` are refused. No command imports it.
 
 ## Module map
 
@@ -11,14 +15,16 @@ tinjis/
   __init__.py     package identity; disables bytecode writing before imports
   __main__.py     `python -m tinjis`
   errors.py       TinjisError(ValueError) and one subclass per layer
-  strictjson.py   duplicate-key-refusing JSON decode
+  strictjson.py   duplicate-key-refusing JSON decode + stable encoder
   paths.py        path grammar, NFC rule, folded keys, containment, ancestor safety
   selection.py    selection inventories (which resources a manifest names)
+  journal.py      fsynced intent journal: model, strict parse, recovery decision
   manifest.py     the schema-v1 model, parser, containment, declared-input shapes
   topology.py     the compiled bundled-example topology lock
-  ownership.py    the ownership record, read only
+  ownership.py    the ownership record model, read-only, plus map validation
   plan.py         read-only planning
-  cli.py          argument parsing, printing, exit codes
+  writer.py       the one mutation site: atomic writes, link primitives, recovery
+  cli.py          argument parsing, printing, exit codes (no writer import)
 ```
 
 Dependency direction is one-way and shallow:
@@ -28,19 +34,24 @@ errors, strictjson, paths        (no Tinjis dependencies)
         |
    selection, ownership          (paths + errors)
         |
-     manifest                    (paths, ownership constants, strictjson)
+     journal                     (ownership, paths, strictjson)
         |
-     topology                    (manifest)
+     manifest                    (paths, ownership, journal, strictjson)
         |
-       plan                      (manifest, ownership, selection)
+     topology, plan              (manifest; plan also ownership, selection)
         |
-       cli                       (everything, for printing)
+       writer                    (plan, journal, ownership)  -- unreachable from cli
+        |
+       cli                       (everything except writer, for printing)
 ```
 
 No module imports a module above it, keeping boundary checks in the lower
-layers. Current source inspection finds no write, process, or network route;
-recursive bounded AST checks in `tests/test_hygiene.py` guard straightforward
-regressions but are not an exhaustive proof of Python behavior.
+layers. `cli` deliberately never imports `writer`, so the read-only commands
+have no route to a mutation. Recursive bounded AST checks in
+`tests/test_hygiene.py` allow filesystem calls in `writer.py` only, ban process
+and network imports everywhere (including `writer.py`), and reject
+`getattr`/`setattr` indirection; they are regression guards, not an exhaustive
+proof of Python behavior.
 
 ## Data flow
 
@@ -57,11 +68,22 @@ manifest file ──parse──▶ Manifest ──validate──▶ folded colli
                             ▼
                     report: create | update | unchanged | retire | conflict
                             │
-                            └── no writer exists. Nothing follows.
+                            └── report only; the CLI stops here. The unexposed
+                                writer foundation can consume a plan from there.
 ```
 
-`plan_projections` is pure with respect to the filesystem: it only reads. There
-is no function in the package that writes.
+`plan_projections` is pure with respect to the filesystem: it only reads. The
+`writer` foundation consumes a plan but is not reachable from the CLI.
+
+```
+plan_projections(...) ──▶ writer.plan_create_transaction(owned, plans)
+                              │  (create only; retire/update/conflict refused)
+                              ▼
+                     writer.apply_transaction(home, boundary, transaction)
+                       journal (fsynced, exclusive) ──▶ links ──▶ owned.json ──▶ clear
+                              │
+                     writer.recover(home, boundary)   (deterministic roll-forward)
+```
 
 ## Three validation layers
 
@@ -103,9 +125,10 @@ a consumer link, a file projection, or one selected resource.
 "Folded" means case-folded and NFC-normalised (`paths.fold_key`), so `Alpha` and
 `alpha`, or an NFC/NFD pair, are one path. A default macOS filesystem would
 collapse them, so reporting two would be a lie about what can exist. Reserved
-leaf names (`settings.json`, `owned.json`, `.tinjis-state`) are matched folded
-too. Destinations must be NFC, so a decomposed spelling never reaches a
-collision check at all.
+leaf names (`settings.json`, `owned.json`, `journal.json`, `lock`,
+`.tinjis-state`) are matched folded too, and the whole `.config/tinjis`
+namespace is reserved against every projection category. Destinations must be
+NFC, so a decomposed spelling never reaches a collision check at all.
 
 These rules are checked at parse time, so an unsafe topology cannot reach the
 planner.
@@ -167,18 +190,32 @@ Tinjis-created or as pre-existing. An existing symlink with the correct target i
 still a conflict unless the record names it, because "it already points where I
 want" is not evidence that this tool wrote it.
 
-## Why there is no writer
+## Why the writer is not exposed
 
-The first extraction had one. It was removed: it could not survive a crash
-between a symlink write and the ownership-record update, and it could not make
-the check-and-write step atomic against another process. Both are real defects,
-and neither is fixable by tightening the code that existed — they need a journal
-with recovery and a mutation primitive that cannot be split.
+The first extraction had a writer with two real defects: it could not survive a
+crash between a symlink write and the ownership-record update, and it could not
+make the check-and-write step atomic against another process. Both were
+deleted rather than left as a callable prototype: `plan.apply_projections`,
+`plan.atomic_link`, `plan.leaf_race_error`, `ownership.write_owned`, and the
+`apply` command. A test asserts each name is still absent.
 
-Rather than keep a callable prototype with known defects, the whole mutation
-path was deleted: `plan.apply_projections`, `plan.atomic_link`,
-`plan.leaf_race_error`, `ownership.write_owned`, and the `apply` command. A test
-asserts each is absent.
+This phase adds the missing machinery under new names, in `journal.py` and
+`writer.py`, with the following shape:
 
-What a future writer must bring is listed in `docs/STATUS.md`, together with the
-requirement that adding one is an explicit, recorded decision.
+* **Journal first.** `apply_transaction` writes an fsynced transaction to
+  `~/.config/tinjis/journal.json` *before* the first link mutation, using a
+  hard link so a concurrent cooperating writer loses. The transaction records
+  the exact `before` and `after` ownership maps and the ordered entries, so
+  recovery needs no context beyond the journal.
+* **Deterministic, idempotent recovery.** `recover` re-checks each destination
+  and replays only the non-final creates; it refuses when the live ownership
+  record matches neither `before` nor `after`. Running it twice changes nothing.
+* **Create only.** `create` relies on `os.symlink`'s atomic `EEXIST`; an
+  existing destination, even one already pointing at the exact target, is
+  refused rather than adopted. A target rewrite (`update`), a retirement, and a
+  conflict are refused before the journal is written.
+
+What is *not* built is the reason `apply` stays hidden: ownership migration
+(precondition 3 in `docs/STATUS.md`), a consumer settings applier (precondition
+4), and a recorded decision to relax the topology lock (precondition 5). Until
+those exist, the CLI exposes no mutation and the lock is unchanged.

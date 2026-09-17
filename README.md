@@ -1,13 +1,15 @@
 # Tinjis
 
-A small, stdlib-only, **read-only** checker for declarative configuration
+A small, stdlib-only, **read-only CLI** for declarative configuration
 manifests.
 
 Tinjis parses one authored JSON manifest, refuses anything malformed or
-ambiguous, and reports the *plan* a future writer would have to carry out. It
-does not carry it out. There is no `apply` command and no filesystem-mutation
-path anywhere in the package — see [`docs/STATUS.md`](docs/STATUS.md) for why
-that is a deliberate scope decision and what a writer would need first.
+ambiguous, and reports the *plan* a future writer would have to carry out. No
+command carries it out: there is no `apply` command and the CLI has no
+filesystem-mutation path. A tested, CLI-unreachable writer foundation exists
+under `tinjis/writer.py` for a later phase; see
+[`docs/STATUS.md`](docs/STATUS.md) for exactly what it does and why `apply` is
+still withheld.
 
 The tools a manifest can name — Pi, Hermes, Herdr, or anything else — are
 **not configured by Tinjis**. A manifest can declare a consumer, its settings
@@ -24,8 +26,9 @@ Early extraction, read-only. In short:
   selection-destination containment, checkout source containment, declared-input
   existence/type/symlink validation, selection inventories, ownership-record
   reading, and read-only planning.
-* **Read-only by construction** — no `apply`, no writer, no journal, no
-  migration. The audit-driven removals are listed in `docs/STATUS.md`.
+* **Read-only by construction** — no `apply`, and no command imports the
+  writer. A create-only, journaled writer foundation exists but is deliberately
+  CLI-unreachable; see `docs/STATUS.md`.
 * **Scaffolded** — declared consumers and their settings/links are validated and
   reported, never applied.
 
@@ -62,7 +65,9 @@ if the checkout must stay byte-for-byte unchanged.
 | `check [--home DIR]` | nothing | The full read-only preflight of the bundled example: declared-input existence, type, and symlink policy; resolved selection leaves; the ownership record; and the plan. Exits non-zero when anything is out of sync. This is the default command. |
 | `example [--raw]` | nothing | Prints the bundled example manifest and whether it still matches the compiled topology lock. |
 
-There is no command that applies a plan.
+There is no command that applies a plan. An internal writer foundation exists in
+`tinjis/writer.py` (create-only, with a journal and idempotent recovery), but the
+CLI does not import it, so no command can reach it.
 
 ### A read-only walkthrough
 
@@ -121,10 +126,12 @@ a runtime root. The full reference is in [`docs/MANIFEST.md`](docs/MANIFEST.md).
 4. **Fail closed.** Missing, malformed, duplicated, unknown, traversing,
    escaping, colliding, case-colliding, non-NFC, mistyped, or symlinked input is
    an error. There is no fallback manifest.
-5. **Nothing runs.** Reviewed actions are printed, never executed. Current
-   source has no network, package-install, subprocess, or output-file path.
-   Recursive bounded AST checks guard straightforward regressions; they are not
-   a general proof of Python behavior.
+5. **Nothing runs.** Reviewed actions are printed, never executed. The CLI
+   imports no writer and the package has no network, package-install, or
+   subprocess path; the one mutation module (`tinjis/writer.py`) is not
+   reachable from any command. Recursive bounded AST checks guard
+   straightforward regressions; they are not a general proof of Python
+   behavior.
 
 Details in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and
 [`SECURITY.md`](SECURITY.md).

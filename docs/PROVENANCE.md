@@ -90,7 +90,7 @@ Tinjis tree:
 
 | Atlas symbol | Why |
 |---|---|
-| `bootstrap._atomic_link`, `bootstrap.apply_projections`, `bootstrap._leaf_race_error`, `bootstrap._write_manifest` | the mutation path. Tinjis v0 has no writer at all; see `STATUS.md`. |
+| `bootstrap._atomic_link`, `bootstrap.apply_projections`, `bootstrap._leaf_race_error`, `bootstrap._write_manifest` | the removed unjournaled mutation path. It is not restored; the current journaled foundation is new code in `writer.py`; see `STATUS.md`. |
 | `pi_bootstrap.preflight`, `install`, `recover`, `adopt`, and the ownership/journal machinery | vendor-specific installer with a transaction journal. Out of scope for this phase. |
 | `hermes_bootstrap` overlay editing, copied-skill projection, journaled swap | same. |
 | `bootstrap` Pi/Hermes integration, dependency and pinned-cache reporting, launcher projection | vendor-specific, and depends on resources that were not extracted. |

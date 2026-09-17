@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+import unicodedata
 import unittest
 from pathlib import Path
 
@@ -77,6 +78,17 @@ class ValidateTest(unittest.TestCase):
             validate_owned_destination(
                 f"{self.home}/.config/example/../example/config.toml", self.home, BOUNDARY
             )
+
+    def test_non_nfc_destination_is_refused(self):
+        decomposed = unicodedata.normalize("NFD", "caf\u00e9")
+        boundary = Boundary(exact=(), prefix=(".local", "share", "example"))
+        with self.assertRaises(OwnershipError) as caught:
+            validate_owned_destination(
+                str(self.home / ".local" / "share" / "example" / decomposed),
+                self.home,
+                boundary,
+            )
+        self.assertIn("NFC", str(caught.exception))
 
     def test_out_of_boundary_destination_is_refused(self):
         with self.assertRaises(OwnershipError) as caught:

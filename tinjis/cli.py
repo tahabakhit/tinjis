@@ -22,11 +22,12 @@ Three commands, no writer:
     Print the authored bundled example manifest and whether it still matches
     the compiled topology lock.
 
-There is no ``apply``. Tinjis v0 has no filesystem mutation path at all, so no
-exposed route can create, replace, or remove a link. No partial-failure or
-destructive-write time-of-check/time-of-use window exists. Read results remain
-snapshots. See ``docs/STATUS.md``
-for what a future writer must bring with it before it can be reintroduced.
+There is no ``apply``. The CLI has no filesystem mutation path at all, so no
+exposed route can create, replace, or remove a link; the writer foundation in
+:mod:`tinjis.writer` is never imported here. No partial-failure or
+destructive-write time-of-check/time-of-use window exists on any command. Read
+results remain snapshots. See ``docs/STATUS.md`` for what the unexposed writer
+does and which preconditions still block exposing it.
 
 The CLI never runs a reviewed action, never installs a package, and never
 touches a consumer's settings file.
@@ -221,8 +222,8 @@ def build_parser() -> argparse.ArgumentParser:
         prog="tinjis",
         description=(
             "Read-only configuration declaration parser, validator, and planner. "
-            "Tinjis v0 never writes. All external tools remain user-managed "
-            "prerequisites."
+            "The tinjis CLI never writes; all external tools remain "
+            "user-managed prerequisites."
         ),
     )
     parser.add_argument("--version", action="version", version=f"tinjis {__version__}")
