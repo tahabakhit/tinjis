@@ -412,10 +412,13 @@ class DocumentationTest(unittest.TestCase):
         "README.md",
         "SECURITY.md",
         "AGENTS.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
         ".gitignore",
         "docs/ARCHITECTURE.md",
         "docs/MANIFEST.md",
         "docs/PROVENANCE.md",
+        "docs/RELEASING.md",
         "docs/STATUS.md",
     )
 
@@ -492,6 +495,63 @@ class DocumentationTest(unittest.TestCase):
         text = (CHECKOUT / "README.md").read_text(encoding="utf-8")
         self.assertIn("read-only", text.lower())
         self.assertNotIn("tinjis apply", text)
+
+    def test_readme_points_to_release_security_and_contributing_docs(self):
+        text = (CHECKOUT / "README.md").read_text(encoding="utf-8")
+        for name in ("CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "docs/RELEASING.md"):
+            with self.subTest(name=name):
+                self.assertIn(name, text)
+
+    def test_changelog_records_the_release_candidate_and_read_only_scope(self):
+        text = (CHECKOUT / "CHANGELOG.md").read_text(encoding="utf-8")
+        lowered = text.lower()
+        self.assertIn("0.1.0", text)
+        self.assertIn("release candidate", lowered)
+        self.assertIn("read-only", lowered)
+        self.assertIn("no `apply` command", lowered)
+
+    def test_contributing_covers_clone_run_tests_safety_and_licensing(self):
+        text = (CHECKOUT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        lowered = text.lower()
+        for phrase in (
+            "standard library",
+            "unittest",
+            "writer",
+            "read-only",
+            "provenance",
+            "license",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, lowered)
+
+    def test_releasing_checklist_covers_the_release_gates(self):
+        text = (CHECKOUT / "docs" / "RELEASING.md").read_text(encoding="utf-8")
+        lowered = text.lower()
+        for phrase in (
+            "clean clone",
+            "3.11",
+            "ruff",
+            "gitleaks",
+            "working tree",
+            "history",
+            "private vulnerability reporting",
+            "macos",
+            "linux",
+            "annotated",
+            "signed",
+            "explicit confirmation",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, lowered)
+
+    def test_ci_matrix_covers_the_claimed_python_range(self):
+        text = (CHECKOUT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        for version in ("3.11", "3.12", "3.13", "3.14"):
+            with self.subTest(version=version):
+                self.assertIn(f'"{version}"', text)
+        readme = (CHECKOUT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("3.11 or newer", readme)
+        self.assertIn("3.14", readme)
 
     def test_no_document_references_an_unpublished_url(self):
         for path in working_tree_files():

@@ -15,7 +15,7 @@ mutation. See *Writer foundation* and *Preconditions* below.
 
 Verified by the test suite in this checkout
 (`python3 -m unittest discover --start-directory tests`), on macOS and on
-Python 3.12 and 3.14.
+Python 3.12 and 3.14; the CI matrix is configured to test 3.11 through 3.14.
 
 | Capability | Notes |
 |---|---|
@@ -158,7 +158,7 @@ durability.
 
 | Platform | Status |
 |---|---|
-| macOS | Primary. The suite passes here on Python 3.12 and 3.14. |
+| macOS | Primary. The suite passes here on Python 3.12 and 3.14; CI is configured to test 3.11 through 3.14. |
 | Linux (POSIX) | **Not verified.** The code is stdlib-only and path handling is POSIX-shaped, and the CI matrix includes Linux, but no green Linux run has been recorded. Do not claim support until one is. |
 | Windows | Deferred. Nothing is claimed; the writer's `os.link`/`os.rename` semantics differ. |
 

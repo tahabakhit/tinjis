@@ -34,7 +34,8 @@ Early extraction, read-only. In short:
 
 ## Requirements
 
-* Python 3.11 or newer (CI targets 3.12 and 3.13; local verification also covers 3.14).
+* Python 3.11 or newer. The CI matrix is configured to test 3.11, 3.12, 3.13,
+  and 3.14; no green run is claimed until one is recorded.
 * A checkout. There is nothing to install: no package manager, no installer,
   no lockfile, no runtime dependency.
 
@@ -156,7 +157,8 @@ accepts. See [`AGENTS.md`](AGENTS.md) before changing any of them.
 
 ## Platform support
 
-* **macOS** — primary; the suite runs here on Python 3.12 and 3.14.
+* **macOS** — primary; the suite runs here on Python 3.12 and 3.14, and CI is
+  configured to test 3.11 through 3.14.
 * **Linux (POSIX)** — **not verified.** The CI matrix includes Linux, but no
   green Linux run has been recorded, so no support is claimed.
 * **Windows** — deferred. Nothing is claimed.
@@ -168,6 +170,13 @@ Hermes, and Herdr, plus two shared resources and one file projection. The
 resources are newly authored placeholders, not real tool configuration, and
 declaring them does not configure anything. See
 [`examples/README.md`](examples/README.md).
+
+## Releases, security, and contributing
+
+* Release status and contents: [`CHANGELOG.md`](CHANGELOG.md).
+* Release procedure and gates: [`docs/RELEASING.md`](docs/RELEASING.md).
+* Security model and private reporting: [`SECURITY.md`](SECURITY.md).
+* Development, tests, and review rules: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
